@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from backend import llm  # noqa: E402
-from backend.chat import answer  # noqa: E402
+from backend.chat import answer, answer_stream  # noqa: E402
 from backend.contact import ContactError, send_message  # noqa: E402
 from backend.pipeline import run_pipeline  # noqa: E402
 
@@ -62,6 +62,17 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 def chat(req: ChatRequest):
+    """Streams the reply as NDJSON: {"type":"delta","text":...} then {"type":"done",...}."""
+    return StreamingResponse(
+        answer_stream(req.question, req.context, [h.model_dump() for h in req.history]),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.post("/api/chat/complete")
+def chat_complete(req: ChatRequest):
+    """Non-streaming version of /api/chat (handy for scripts and tests)."""
     return answer(req.question, req.context, [h.model_dump() for h in req.history])
 
 

@@ -114,3 +114,71 @@ def generate_json(system: str, prompt: str, temperature: float = 0.4, timeout: f
             print(f"[gemini] {model}: {type(exc).__name__}: {str(exc)[:300]}", flush=True)
             continue
     raise LLMUnavailable(str(last_error) if last_error else "no model answered")
+
+
+STREAM_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent"
+
+
+def stream_text(system: str, prompt: str, temperature: float = 0.4, budget: float = 45.0):
+    """Yield text chunks from Gemini as they are generated.
+
+    Falls back to the next model only if nothing has been sent yet.
+    Raises LLMUnavailable when no model produced any text.
+    """
+    key = (os.getenv("GEMINI_API_KEY") or "").strip().strip('"').strip("'")
+    if not key:
+        raise LLMUnavailable("GEMINI_API_KEY is not set")
+    body = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingLevel": "minimal"}},
+    }
+    started = time.monotonic()
+    queue, tried = _models(), set()
+    last_error = None
+    while queue and time.monotonic() - started < budget:
+        model = queue.pop(0)
+        if model in tried:
+            continue
+        tried.add(model)
+        sent_any = False
+        try:
+            with httpx.stream(
+                "POST",
+                STREAM_URL.format(model=model),
+                params={"alt": "sse"},
+                headers={"x-goog-api-key": key},
+                json=body,
+                timeout=httpx.Timeout(20.0, read=25.0),
+            ) as resp:
+                if resp.status_code != 200:
+                    text = resp.read().decode("utf-8", "ignore")
+                    if resp.status_code == 400 and "thinking" in text.lower() and "thinkingConfig" in body["generationConfig"]:
+                        body["generationConfig"].pop("thinkingConfig")
+                        tried.discard(model)
+                        queue.insert(0, model)
+                        continue
+                    last_error = RuntimeError(f"{model}: HTTP {resp.status_code} {text[:200]}")
+                    print(f"[gemini-stream] {last_error}", flush=True)
+                    queue = [m for m in re.findall(r"models/(gemini-[\w.\-]+)", text) if m not in tried] + queue
+                    continue
+                for line in resp.iter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    try:
+                        data = json.loads(line[5:].strip())
+                        parts = data["candidates"][0]["content"]["parts"]
+                    except (KeyError, IndexError, json.JSONDecodeError):
+                        continue
+                    for part in parts:
+                        if part.get("text") and not part.get("thought"):
+                            sent_any = True
+                            yield part["text"]
+            if sent_any:
+                return
+        except Exception as exc:
+            last_error = exc
+            print(f"[gemini-stream] {model}: {type(exc).__name__}: {str(exc)[:200]}", flush=True)
+            if sent_any:
+                return  # keep what was already streamed
+    raise LLMUnavailable(str(last_error) if last_error else "no model answered")

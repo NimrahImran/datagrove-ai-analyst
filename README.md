@@ -31,7 +31,7 @@ Most small businesses have useful data sitting in spreadsheets, but no time or t
 | 🤖 | **Live agent activity** | Watch all five agents work in real time (streamed from the backend), with expandable details for each step. |
 | 📊 | **Interactive visual analytics** | Hover, filters, date range, zoom, range slider and click-to-drill-down. Every chart recalculates instantly from the exact data. |
 | 📈 | **Forecasting** | Holt's linear trend forecast for the next 3, 6 or 12 periods with an 80% confidence band. |
-| 💬 | **Chat with your data** | Ask questions in plain words. Answers come with charts computed from the real rows, so numbers are always exact. |
+| 💬 | **Chat with your data** | Ask questions in plain words. Replies stream in live, with charts computed from the real rows, so numbers are always exact. |
 | 🧠 | **AI insights and recommendations** | An executive summary, five insights and four practical recommendations, written by Google Gemini from the real findings. |
 | 📄 | **Downloadable report** | A polished multi-page PDF (summary, KPIs, insights, recommendations, charts, cleaning log) plus the cleaned CSV. |
 | ✉️ | **Contact form** | Messages are emailed directly to the site owner. |
@@ -98,7 +98,7 @@ datagrove-ai-analyst/
 |---|---|---|
 | `GET` | `/api/health` | Service status and AI mode |
 | `POST` | `/api/analyze` | Multipart CSV upload. Streams one JSON event per line for each agent, then the full result. |
-| `POST` | `/api/chat` | `{ question, context, history }` → `{ answer, chart }` |
+| `POST` | `/api/chat` | `{ question, context, history }` → streams the reply word by word (NDJSON), then the chart spec |
 | `POST` | `/api/contact` | `{ name, email, subject, message }` → sends an email |
 
 Interactive API docs are available at `/api/docs`.

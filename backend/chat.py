@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 from backend import llm
 
@@ -110,3 +111,71 @@ def answer(question: str, ctx: dict, history: list[dict]) -> dict:
     out["chart"] = _validate_chart(out.get("chart"), columns)
     out["answer"] = str(out.get("answer", ""))[:1500]
     return out
+
+
+STREAM_PROMPT = """Dataset context:
+{context}
+
+Recent conversation:
+{history}
+
+User question: {question}
+
+Write a short, friendly answer in plain text (2-4 sentences, no markdown, no bullet symbols).
+Then, on the very last line, write CHART: followed by a JSON chart spec using real column names,
+or CHART: null if no chart helps. Chart spec format:
+{{"type": "bar|line|donut|scatter", "x": "column", "y": "numeric column or null", "agg": "sum|mean|count", "top": 10, "title": "short title"}}"""
+
+MARKER = "CHART:"
+
+
+def _event(**kw) -> str:
+    return json.dumps(kw, default=str) + "\n"
+
+
+def _clean(text: str) -> str:
+    return re.sub(r"[*_`#]+", "", text)
+
+
+def answer_stream(question: str, ctx: dict, history: list[dict]):
+    """Stream the answer as NDJSON: delta events, then one done event with the chart."""
+    question = (question or "").strip()[:500]
+    columns = [c["name"] for c in ctx.get("schema", [])]
+    if not question:
+        yield _event(type="done", answer="Please type a question about your data.", chart=None)
+        return
+
+    if llm.is_configured():
+        hist = "\n".join(f"{h.get('role')}: {str(h.get('text'))[:300]}" for h in history[-6:]) or "none"
+        prompt = STREAM_PROMPT.format(context=json.dumps(ctx, default=str)[:9000], history=hist, question=question)
+        buf, emitted = "", 0
+        try:
+            for chunk in llm.stream_text(SYSTEM.replace(" Return JSON only.", ""), prompt, temperature=0.3):
+                buf += chunk
+                cut = buf.find(MARKER)
+                safe_end = cut if cut != -1 else max(emitted, len(buf) - len(MARKER))
+                if safe_end > emitted:
+                    yield _event(type="delta", text=_clean(buf[emitted:safe_end]))
+                    emitted = safe_end
+            cut = buf.find(MARKER)
+            text_part = buf[:cut] if cut != -1 else buf
+            if len(text_part) > emitted:
+                yield _event(type="delta", text=_clean(text_part[emitted:]))
+            chart = None
+            if cut != -1:
+                raw = buf[cut + len(MARKER):].strip()
+                try:
+                    chart = json.loads(raw[raw.find("{"): raw.rfind("}") + 1]) if "{" in raw else None
+                except json.JSONDecodeError:
+                    chart = None
+            yield _event(type="done", answer=_clean(text_part).strip(), chart=_validate_chart(chart, columns))
+            return
+        except llm.LLMUnavailable:
+            pass  # fall back to the rule-based answer below
+
+    out = _fallback(question, ctx)
+    words = re.findall(r"\S+\s*", out["answer"])
+    for i in range(0, len(words), 3):  # stream in small pieces for a natural typing feel
+        yield _event(type="delta", text="".join(words[i:i + 3]))
+        time.sleep(0.04)
+    yield _event(type="done", answer=out["answer"], chart=_validate_chart(out.get("chart"), columns))

@@ -163,6 +163,7 @@ td{padding:9px 10px;border-top:1px solid var(--line)}
 .msg.user{align-self:flex-end;background:var(--walnut-deep);color:var(--butter);border-bottom-right-radius:6px}
 .msg.bot{align-self:flex-start;background:var(--butter-3);border:1px solid var(--line);border-bottom-left-radius:6px;width:min(100%,720px)}
 .msg.bot .mini{height:280px;margin-top:10px}
+.msg.streaming .msg-text::after{content:"";display:inline-block;width:8px;height:15px;margin-left:3px;vertical-align:-2px;border-radius:2px;background:var(--olive);animation:blink2 .9s infinite}
 .msg.typing span{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--olive);animation:typing 1s infinite}
 .msg.typing span:nth-child(2){animation-delay:.15s}.msg.typing span:nth-child(3){animation-delay:.3s}
 @keyframes typing{50%{opacity:.25;transform:translateY(-3px)}}

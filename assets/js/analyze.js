@@ -642,18 +642,54 @@
     var log = $('chatLog');
     log.insertAdjacentHTML('beforeend', '<div class="msg user">' + esc(q) + '</div><div class="msg bot typing" id="typing"><span></span><span></span><span></span></div>');
     log.scrollTop = log.scrollHeight;
+    var bubble = null, textEl = null, full = '';
+    function ensureBubble() {
+      if (bubble) return;
+      var t = $('typing'); if (t) t.remove();
+      log.insertAdjacentHTML('beforeend', '<div class="msg bot streaming"><div class="msg-text"></div></div>');
+      bubble = log.lastElementChild; textEl = bubble.querySelector('.msg-text');
+    }
+    function finish(answer, chart) {
+      ensureBubble();
+      bubble.classList.remove('streaming');
+      textEl.innerHTML = esc(answer || full).replace(/\n/g, '<br>');
+      if (chart) {
+        var id = 'mini-' + Date.now();
+        bubble.insertAdjacentHTML('beforeend', '<div class="mini" id="' + id + '"></div>');
+        chatChart($(id), chart);
+      }
+      state.chat.push({ role: 'user', text: q }, { role: 'assistant', text: answer || full });
+      log.scrollTop = log.scrollHeight;
+    }
     fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: q, context: chatContext(), history: state.chat.slice(-6) })
-    }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (out) {
-      $('typing').remove();
-      var id = 'mini-' + Date.now();
-      log.insertAdjacentHTML('beforeend', '<div class="msg bot"><div>' + esc(out.answer).replace(/\n/g, '<br>') + '</div>' + (out.chart ? '<div class="mini" id="' + id + '"></div>' : '') + '</div>');
-      if (out.chart) chatChart($(id), out.chart);
-      state.chat.push({ role: 'user', text: q }, { role: 'assistant', text: out.answer });
-      log.scrollTop = log.scrollHeight;
+    }).then(function (r) {
+      if (!r.ok || !r.body) throw new Error();
+      var reader = r.body.getReader(), dec = new TextDecoder(), buf = '', done = false;
+      function handle(line) {
+        if (!line.trim()) return;
+        var ev; try { ev = JSON.parse(line); } catch (e) { return; }
+        if (ev.type === 'delta') {
+          ensureBubble();
+          full += ev.text;
+          textEl.textContent = full;
+          log.scrollTop = log.scrollHeight;
+        } else if (ev.type === 'done') { done = true; finish(ev.answer, ev.chart); }
+      }
+      function pump() {
+        return reader.read().then(function (res) {
+          if (res.done) { handle(buf); if (!done) { if (full) finish(full, null); else throw new Error(); } return; }
+          buf += dec.decode(res.value, { stream: true });
+          var lines = buf.split('\n'); buf = lines.pop();
+          lines.forEach(handle);
+          return pump();
+        });
+      }
+      return pump();
     }).catch(function () {
       var t = $('typing'); if (t) t.remove();
+      if (bubble && full) { finish(full, null); return; }
       log.insertAdjacentHTML('beforeend', '<div class="msg bot">Sorry, I could not answer that right now. Please try again.</div>');
     }).finally(function () { chatBusy = false; });
   }

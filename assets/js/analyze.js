@@ -642,7 +642,21 @@
     var log = $('chatLog');
     log.insertAdjacentHTML('beforeend', '<div class="msg user">' + esc(q) + '</div><div class="msg bot typing" id="typing"><span></span><span></span><span></span></div>');
     log.scrollTop = log.scrollHeight;
-    var bubble = null, textEl = null, full = '';
+    var bubble = null, textEl = null, full = '', shown = 0, typer = null, pendingDone = null;
+    function startTyper() {
+      if (typer) return;
+      typer = setInterval(function () {
+        if (shown < full.length) {
+          var step = Math.max(1, Math.ceil((full.length - shown) / 40));
+          shown = Math.min(full.length, shown + step);
+          textEl.textContent = full.slice(0, shown);
+          log.scrollTop = log.scrollHeight;
+        } else if (pendingDone) {
+          clearInterval(typer); typer = null;
+          var d = pendingDone; pendingDone = null; finish(d.answer, d.chart);
+        }
+      }, 18);
+    }
     function ensureBubble() {
       if (bubble) return;
       var t = $('typing'); if (t) t.remove();
@@ -673,9 +687,11 @@
         if (ev.type === 'delta') {
           ensureBubble();
           full += ev.text;
-          textEl.textContent = full;
-          log.scrollTop = log.scrollHeight;
-        } else if (ev.type === 'done') { done = true; finish(ev.answer, ev.chart); }
+          startTyper();
+        } else if (ev.type === 'done') {
+          done = true;
+          if (typer) pendingDone = ev; else finish(ev.answer, ev.chart);
+        }
       }
       function pump() {
         return reader.read().then(function (res) {
@@ -689,6 +705,7 @@
       return pump();
     }).catch(function () {
       var t = $('typing'); if (t) t.remove();
+      if (typer) { clearInterval(typer); typer = null; }
       if (bubble && full) { finish(full, null); return; }
       log.insertAdjacentHTML('beforeend', '<div class="msg bot">Sorry, I could not answer that right now. Please try again.</div>');
     }).finally(function () { chatBusy = false; });

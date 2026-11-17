@@ -89,7 +89,8 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
                         smtp.starttls(context=ctx)
                         smtp.ehlo()
                     stage = "login"
-                    smtp.login(user, password)
+                    smtp.user, smtp.password = user, password
+                    smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=False)
                     stage = "send"
                     smtp.send_message(msg)
                 return
@@ -100,8 +101,9 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
                 errors.append(f"{mode}@{stage}: {type(exc).__name__}: {str(exc)[:200]}")
     finally:
         socket.getaddrinfo = original_getaddrinfo
-    print("[contact] send failed: " + " | ".join(errors), flush=True)
-    raise ContactError("We could not send your message right now. Please try again in a moment.")
+    print("[contact] smtp failed: " + " | ".join(errors), flush=True)
+    # Fallback: FormSubmit (HTTP). The address comes from env vars, never from code.
+    _send_formsubmit(os.getenv("CONTACT_TO") or user, name, email, subject, message)
 
 def _send_resend(key: str, to_addr: str, name: str, email: str, subject: str, message: str) -> None:
     sender = (os.getenv("CONTACT_FROM") or "Datagrove Contact <onboarding@resend.dev>").strip()
@@ -123,4 +125,30 @@ def _send_resend(key: str, to_addr: str, name: str, email: str, subject: str, me
         raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
     if resp.status_code >= 300:
         print(f"[contact] resend: HTTP {resp.status_code} {resp.text[:200]}", flush=True)
+        raise ContactError("We could not send your message right now. Please try again in a moment.")
+
+
+def _send_formsubmit(to_addr: str, name: str, email: str, subject: str, message: str) -> None:
+    site = os.getenv("SITE_URL", "https://datagrove-ai.vercel.app")
+    try:
+        resp = httpx.post(
+            f"https://formsubmit.co/ajax/{to_addr.strip()}",
+            headers={"Accept": "application/json", "Origin": site, "Referer": site + "/contact"},
+            json={
+                "name": name,
+                "email": email,
+                "_replyto": email,
+                "_subject": f"[Datagrove] {subject or 'New message'} — from {name}",
+                "_template": "table",
+                "_captcha": "false",
+                "message": message,
+            },
+            timeout=20,
+        )
+        body = resp.text[:300]
+    except Exception as exc:
+        print(f"[contact] formsubmit: {type(exc).__name__}", flush=True)
+        raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
+    print(f"[contact] formsubmit: HTTP {resp.status_code} {body}", flush=True)
+    if resp.status_code >= 300 or '"success":"false"' in body.replace(" ", ""):
         raise ContactError("We could not send your message right now. Please try again in a moment.")

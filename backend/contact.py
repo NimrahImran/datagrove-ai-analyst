@@ -28,11 +28,11 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     if len(message) > 5000:
         raise ContactError("Your message is too long.")
 
-    user = os.getenv("GMAIL_USER")
-    password = os.getenv("GMAIL_APP_PASSWORD")
+    user = (os.getenv("GMAIL_USER") or "").strip().strip('"').strip("'")
+    password = (os.getenv("GMAIL_APP_PASSWORD") or "").replace(" ", "").strip().strip('"').strip("'")
     if not user or not password:
         raise ContactError("The contact form is not set up yet. Please try again later.")
-    to = os.getenv("CONTACT_TO") or user
+    to = (os.getenv("CONTACT_TO") or "").strip() or user
 
     msg = EmailMessage()
     msg["Subject"] = f"[Datagrove] {subject or 'New message'} — from {name}"
@@ -46,4 +46,5 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
             smtp.login(user, password)
             smtp.send_message(msg)
     except Exception as exc:
+        print(f"[contact] send failed: {type(exc).__name__}: {str(exc)[:300]}", flush=True)
         raise ContactError("We could not send your message right now. Please try again in a moment.") from exc

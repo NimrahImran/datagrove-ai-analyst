@@ -53,10 +53,12 @@ def holt_forecast(values: np.ndarray, horizon: int = 3) -> dict:
 
 
 def _pick_freq(dates: pd.Series) -> tuple[str, str]:
-    span = (dates.max() - dates.min()).days
-    if span > 540:
+    """Pick the finest period that still has enough rows in each period."""
+    span = max((dates.max() - dates.min()).days, 1)
+    rows = len(dates)
+    if span > 540 or rows / (span / 30.4) < 2:
         return "MS", "month"
-    if span > 120:
+    if span > 120 or rows / span < 1.5:
         return "W-MON", "week"
     return "D", "day"
 

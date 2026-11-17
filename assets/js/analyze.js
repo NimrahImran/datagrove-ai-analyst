@@ -258,8 +258,10 @@
     var di = col(dateName), min = null, max = null;
     rows.forEach(function (r) { var v = r[di]; if (!v) return; if (min === null || v < min) min = v; if (max === null || v > max) max = v; });
     if (!min) return 'day';
-    var span = (new Date(max) - new Date(min)) / 864e5;
-    return span > 540 ? 'month' : span > 120 ? 'week' : 'day';
+    var span = Math.max((new Date(max) - new Date(min)) / 864e5, 1), n = rows.length;
+    if (span > 540 || n / (span / 30.4) < 2) return 'month';
+    if (span > 120 || n / span < 1.5) return 'week';
+    return 'day';
   }
   function timeSeries(rows, dateName, yName, agg) {
     var unit = pickUnit(state.rows, dateName);

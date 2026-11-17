@@ -12,6 +12,9 @@ import re
 from typing import Any
 
 import httpx
+import logging
+
+log = logging.getLogger("datagrove.llm")
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 DEFAULT_MODELS = ("gemini-2.5-flash", "gemini-2.0-flash")
@@ -48,7 +51,7 @@ def _extract_json(text: str) -> Any:
 
 def generate_json(system: str, prompt: str, temperature: float = 0.4, timeout: float = 40.0) -> Any:
     """Ask Gemini for a JSON answer. Raises LLMUnavailable on failure."""
-    key = os.getenv("GEMINI_API_KEY")
+    key = (os.getenv("GEMINI_API_KEY") or "").strip().strip('"').strip("'")
     if not key:
         raise LLMUnavailable("GEMINI_API_KEY is not set")
 
@@ -70,12 +73,14 @@ def generate_json(system: str, prompt: str, temperature: float = 0.4, timeout: f
                 timeout=timeout,
             )
             if resp.status_code != 200:
-                last_error = RuntimeError(f"{model}: HTTP {resp.status_code}")
+                last_error = RuntimeError(f"{model}: HTTP {resp.status_code} {resp.text[:300]}")
+                print(f"[gemini] {last_error}", flush=True)
                 continue
             data = resp.json()
             text = data["candidates"][0]["content"]["parts"][0]["text"]
             return _extract_json(text)
         except Exception as exc:  # network, parsing or quota errors
             last_error = exc
+            print(f"[gemini] {model}: {type(exc).__name__}: {str(exc)[:300]}", flush=True)
             continue
     raise LLMUnavailable(str(last_error) if last_error else "no model answered")

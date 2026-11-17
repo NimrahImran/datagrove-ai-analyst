@@ -43,7 +43,8 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
         return
 
     user = (os.getenv("GMAIL_USER") or "").strip().strip('"').strip("'")
-    password = (os.getenv("GMAIL_APP_PASSWORD") or "").replace(" ", "").strip().strip('"').strip("'")
+    password = "".join((os.getenv("GMAIL_APP_PASSWORD") or "").split()).strip('"').strip("'")
+    user = "".join(user.split())
     if not user or not password:
         raise ContactError("The contact form is not set up yet. Please try again later.")
     to = (os.getenv("CONTACT_TO") or "").strip() or user
@@ -55,6 +56,13 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     msg["Reply-To"] = email
     msg.set_content(f"Name: {name}\nEmail: {email}\nSubject: {subject or '-'}\n\n{message}\n")
 
+    # Shape check only (never the values): helps spot copy-paste mistakes
+    print(
+        f"[contact] config: user_len={len(user)} user_has_at={'@' in user} "
+        f"user_ascii={user.isascii()} pass_len={len(password)} pass_letters_only={password.isalpha()} "
+        f"pass_ascii={password.isascii()}",
+        flush=True,
+    )
     errors = []
     original_getaddrinfo = socket.getaddrinfo
 

@@ -1,13 +1,12 @@
 """Contact form: sends the visitor's message to the site owner by email.
 
-Credentials live only in environment variables (never in code).
-
-Option A (recommended on Vercel): Resend HTTP email API
-  RESEND_API_KEY      API key from resend.com
-  CONTACT_TO          the email address that receives messages
-Option B: Gmail SMTP (works where outbound SMTP is allowed)
-  GMAIL_USER          the Gmail address that sends the email
+Credentials live only in environment variables (never in code):
+  GMAIL_USER          the Gmail address that sends and receives messages
   GMAIL_APP_PASSWORD  a Google App Password for that address
+  CONTACT_TO          optional, where messages go (defaults to GMAIL_USER)
+
+If Gmail SMTP is unavailable, the message is delivered through FormSubmit
+(form-to-email over HTTPS) to the same address.
 """
 from __future__ import annotations
 
@@ -36,18 +35,15 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     if len(message) > 5000:
         raise ContactError("Your message is too long.")
 
-    resend_key = (os.getenv("RESEND_API_KEY") or "").strip()
-    to_addr = (os.getenv("CONTACT_TO") or os.getenv("GMAIL_USER") or "").strip()
-    if resend_key and to_addr:
-        _send_resend(resend_key, to_addr, name, email, subject, message)
-        return
-
     user = (os.getenv("GMAIL_USER") or "").strip().strip('"').strip("'")
     password = "".join((os.getenv("GMAIL_APP_PASSWORD") or "").split()).strip('"').strip("'")
     user = "".join(user.split())
-    if not user or not password:
-        raise ContactError("The contact form is not set up yet. Please try again later.")
     to = (os.getenv("CONTACT_TO") or "").strip() or user
+    if not to:
+        raise ContactError("The contact form is not set up yet. Please try again later.")
+    if not user or not password:
+        _send_formsubmit(to, name, email, subject, message)
+        return
 
     msg = EmailMessage()
     msg["Subject"] = f"[Datagrove] {subject or 'New message'} — from {name}"
@@ -96,33 +92,38 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
                 return
             except smtplib.SMTPAuthenticationError as exc:
                 print(f"[contact] {mode}: Gmail rejected the login ({exc.smtp_code}). Check GMAIL_USER and GMAIL_APP_PASSWORD.", flush=True)
-                raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
+                errors.append(f"{mode}@login: rejected {exc.smtp_code}")
+                break
             except Exception as exc:
                 errors.append(f"{mode}@{stage}: {type(exc).__name__}: {str(exc)[:200]}")
     finally:
         socket.getaddrinfo = original_getaddrinfo
-    print("[contact] send failed: " + " | ".join(errors), flush=True)
-    raise ContactError("We could not send your message right now. Please try again in a moment.")
+    print("[contact] gmail failed: " + " | ".join(errors), flush=True)
+    # Backup: FormSubmit (form-to-email over HTTPS). The address comes from env vars, never from code.
+    _send_formsubmit(to, name, email, subject, message)
 
-def _send_resend(key: str, to_addr: str, name: str, email: str, subject: str, message: str) -> None:
-    sender = (os.getenv("CONTACT_FROM") or "Datagrove Contact <onboarding@resend.dev>").strip()
+def _send_formsubmit(to_addr: str, name: str, email: str, subject: str, message: str) -> None:
+    site = os.getenv("SITE_URL", "https://datagrove-ai.vercel.app")
     try:
         resp = httpx.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {key}"},
+            f"https://formsubmit.co/ajax/{to_addr.strip()}",
+            headers={"Accept": "application/json", "Origin": site, "Referer": site + "/contact"},
             json={
-                "from": sender,
-                "to": [to_addr],
-                "reply_to": email,
-                "subject": f"[Datagrove] {subject or 'New message'} — from {name}",
-                "text": f"Name: {name}\nEmail: {email}\nSubject: {subject or '-'}\n\n{message}\n",
+                "name": name,
+                "email": email,
+                "_replyto": email,
+                "_subject": f"[Datagrove] {subject or 'New message'} — from {name}",
+                "_template": "table",
+                "_captcha": "false",
+                "message": message,
             },
             timeout=20,
         )
+        body = resp.text[:300]
     except Exception as exc:
-        print(f"[contact] resend: {type(exc).__name__}", flush=True)
+        print(f"[contact] formsubmit: {type(exc).__name__}", flush=True)
         raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
-    if resp.status_code >= 300:
-        print(f"[contact] resend: HTTP {resp.status_code} {resp.text[:200]}", flush=True)
+    # never log the address; only the service reply
+    print(f"[contact] formsubmit: HTTP {resp.status_code} {body.replace(to_addr, '<owner>')}", flush=True)
+    if resp.status_code >= 300 or '"success":"false"' in body.replace(" ", ""):
         raise ContactError("We could not send your message right now. Please try again in a moment.")
-

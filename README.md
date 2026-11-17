@@ -34,7 +34,7 @@ Most small businesses have useful data sitting in spreadsheets, but no time or t
 | 💬 | **Chat with your data** | Ask questions in plain words. Replies stream in live, with charts computed from the real rows, so numbers are always exact. |
 | 🧠 | **AI insights and recommendations** | An executive summary, five insights and four practical recommendations, written by Google Gemini from the real findings. |
 | 📄 | **Downloadable report** | A polished multi-page PDF (summary, KPIs, insights, recommendations, charts, cleaning log) plus the cleaned CSV. |
-| ✉️ | **Contact form** | Messages are emailed directly to the site owner. |
+| ✉️ | **Contact form** | Messages are emailed to the site owner through Gmail, with FormSubmit as an automatic backup. |
 
 ## The five agents
 
@@ -119,9 +119,8 @@ npm i -g vercel && vercel dev  # serves the pages and the API together
 |---|---|---|
 | `GEMINI_API_KEY` | Recommended | Google Gemini key for AI insights and chat (free key from Google AI Studio) |
 | `GEMINI_MODEL` | Optional | Override the model (default `gemini-3.8-flash`) |
-| `RESEND_API_KEY` | For contact form | Resend API key (free at resend.com). Recommended on Vercel. |
-| `GMAIL_USER` | Alternative | Gmail address that sends contact emails |
-| `GMAIL_APP_PASSWORD` | Alternative | Google App Password for that address |
+| `GMAIL_USER` | For contact form | Gmail address that sends contact emails |
+| `GMAIL_APP_PASSWORD` | For contact form | Google App Password for that address |
 | `CONTACT_TO` | For contact form | Where contact messages are delivered (defaults to `GMAIL_USER`) |
 
 ## Privacy

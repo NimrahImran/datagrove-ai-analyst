@@ -119,7 +119,7 @@ npm i -g vercel && vercel dev  # serves the pages and the API together
 |---|---|---|
 | `GEMINI_API_KEY` | Recommended | Google Gemini key for AI insights and chat (free key from Google AI Studio) |
 | `GEMINI_MODEL` | Optional | Override the model (default `gemini-3.8-flash`) |
-| `GMAIL_USER` | For contact form | Owner address that receives messages (also the Gmail backup sender) | Gmail address that sends contact emails |
+| `GMAIL_USER` | For contact form | Owner address that receives messages (also the Gmail backup sender) |
 | `GMAIL_APP_PASSWORD` | For contact form | Google App Password for that address |
 | `FORMSUBMIT_ID` | Optional | The private random alias FormSubmit gives after activation (keeps the address hidden) |
 | `CONTACT_TO` | For contact form | Where contact messages are delivered (defaults to `GMAIL_USER`) |

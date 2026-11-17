@@ -102,7 +102,7 @@ def answer(question: str, ctx: dict, history: list[dict]) -> dict:
     else:
         hist = "\n".join(f"{h.get('role')}: {str(h.get('text'))[:300]}" for h in history[-6:]) or "none"
         try:
-            out = llm.generate_json(SYSTEM, PROMPT.format(context=json.dumps(ctx, default=str)[:9000], history=hist, question=question), temperature=0.3)
+            out = llm.generate_json(SYSTEM, PROMPT.format(context=json.dumps(ctx, default=str)[:9000], history=hist, question=question), temperature=0.3, budget=40.0)
             if not isinstance(out, dict) or "answer" not in out:
                 raise ValueError
         except Exception:

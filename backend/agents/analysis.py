@@ -94,7 +94,11 @@ def analyze(df: pd.DataFrame, profile: dict, metric: str | None) -> dict:
     # Trend + forecast
     if date_col and metric:
         freq, unit = _pick_freq(df[date_col].dropna())
-        series = df.dropna(subset=[date_col]).set_index(date_col)[metric].resample(freq).sum()
+        dated = df.dropna(subset=[date_col])
+        if unit == "day":  # only days that actually have rows, so gaps don't look like zero sales
+            series = dated.groupby(dated[date_col].dt.normalize())[metric].sum()
+        else:
+            series = dated.set_index(date_col)[metric].resample(freq).sum()
         if len(series) > 2:
             # drop a trailing partial period so the trend is not misleading
             last_date = df[date_col].max()

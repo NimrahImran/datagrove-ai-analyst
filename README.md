@@ -119,9 +119,10 @@ npm i -g vercel && vercel dev  # serves the pages and the API together
 |---|---|---|
 | `GEMINI_API_KEY` | Recommended | Google Gemini key for AI insights and chat (free key from Google AI Studio) |
 | `GEMINI_MODEL` | Optional | Override the model (default `gemini-3.8-flash`) |
-| `GMAIL_USER` | For contact form | Gmail address that sends contact emails |
-| `GMAIL_APP_PASSWORD` | For contact form | Google App Password for that address |
-| `CONTACT_TO` | Optional | Where contact messages are delivered (defaults to `GMAIL_USER`) |
+| `RESEND_API_KEY` | For contact form | Resend API key (free at resend.com). Recommended on Vercel. |
+| `GMAIL_USER` | Alternative | Gmail address that sends contact emails |
+| `GMAIL_APP_PASSWORD` | Alternative | Google App Password for that address |
+| `CONTACT_TO` | For contact form | Where contact messages are delivered (defaults to `GMAIL_USER`) |
 
 ## Privacy
 

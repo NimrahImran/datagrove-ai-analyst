@@ -84,6 +84,13 @@ class ContactRequest(BaseModel):
     website: str = ""  # honeypot: bots fill this, people never see it
 
 
+@app.get("/api/contact-config")
+def contact_config():
+    """Public form key for the browser backup (Web3Forms keys are meant to be public)."""
+    key = (os.getenv("WEB3FORMS_ACCESS_KEY") or "").strip()
+    return {"web3forms_key": key or None}
+
+
 @app.post("/api/contact")
 def contact(req: ContactRequest):
     if req.website:

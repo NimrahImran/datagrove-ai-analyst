@@ -5,8 +5,9 @@ Credentials live only in environment variables (never in code):
   GMAIL_APP_PASSWORD  a Google App Password for that address
   CONTACT_TO          optional, where messages go (defaults to GMAIL_USER)
 
-If Gmail SMTP is unavailable, the message is delivered through FormSubmit
-(form-to-email over HTTPS) to the same address.
+If Gmail is not set up or rejects the login, the browser sends the form
+through Web3Forms instead (WEB3FORMS_ACCESS_KEY, a public form key that
+does not reveal the owner's email address).
 """
 from __future__ import annotations
 
@@ -42,8 +43,7 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     if not to:
         raise ContactError("The contact form is not set up yet. Please try again later.")
     if not user or not password:
-        _send_formsubmit(to, name, email, subject, message)
-        return
+        raise ContactError("The contact form is not set up yet. Please try again later.")
 
     msg = EmailMessage()
     msg["Subject"] = f"[Datagrove] {subject or 'New message'} — from {name}"
@@ -99,31 +99,4 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     finally:
         socket.getaddrinfo = original_getaddrinfo
     print("[contact] gmail failed: " + " | ".join(errors), flush=True)
-    # Backup: FormSubmit (form-to-email over HTTPS). The address comes from env vars, never from code.
-    _send_formsubmit(to, name, email, subject, message)
-
-def _send_formsubmit(to_addr: str, name: str, email: str, subject: str, message: str) -> None:
-    site = os.getenv("SITE_URL", "https://datagrove-ai.vercel.app")
-    try:
-        resp = httpx.post(
-            f"https://formsubmit.co/ajax/{to_addr.strip()}",
-            headers={"Accept": "application/json", "Origin": site, "Referer": site + "/contact"},
-            json={
-                "name": name,
-                "email": email,
-                "_replyto": email,
-                "_subject": f"[Datagrove] {subject or 'New message'} — from {name}",
-                "_template": "table",
-                "_captcha": "false",
-                "message": message,
-            },
-            timeout=20,
-        )
-        body = resp.text[:300]
-    except Exception as exc:
-        print(f"[contact] formsubmit: {type(exc).__name__}", flush=True)
-        raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
-    # never log the address; only the service reply
-    print(f"[contact] formsubmit: HTTP {resp.status_code} {body.replace(to_addr, '<owner>')}", flush=True)
-    if resp.status_code >= 300 or '"success":"false"' in body.replace(" ", ""):
-        raise ContactError("We could not send your message right now. Please try again in a moment.")
+    raise ContactError("We could not send your message right now. Please try again in a moment.")

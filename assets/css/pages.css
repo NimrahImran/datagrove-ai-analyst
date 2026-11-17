@@ -1,0 +1,63 @@
+/* Inner pages: How it works, About, Contact */
+
+/* How it works */
+.timeline{position:relative;display:grid;gap:18px}
+.timeline::before{content:"";position:absolute;left:47px;top:30px;bottom:30px;width:2px;background:repeating-linear-gradient(180deg,var(--olive-soft) 0 8px,transparent 8px 16px)}
+.step{position:relative;display:grid;grid-template-columns:auto 1fr;gap:20px;padding:24px 26px 24px 24px;align-items:start}
+.step .ico{width:48px;height:48px;position:relative;z-index:1;box-shadow:0 0 0 6px var(--butter-2)}
+.step-n{position:absolute;top:18px;right:24px;font-family:var(--serif);font-size:44px;line-height:1;color:var(--olive-soft);opacity:.7}
+.step h2{font-family:var(--serif);font-weight:500;font-size:22px;color:var(--walnut-deep)}
+.step-lead{color:var(--walnut-soft);margin:4px 0 12px}
+.step ul{list-style:none;display:grid;gap:8px}
+.step li{position:relative;padding-left:22px;font-size:14.5px}
+.step li::before{content:"";position:absolute;left:0;top:8px;width:10px;height:10px;border-radius:3px;background:var(--olive);transform:rotate(45deg)}
+
+.tech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+.tech{padding:22px}
+.tech h3,.what h3{font-family:var(--serif);font-weight:500;font-size:18px;margin:14px 0 6px;color:var(--walnut-deep)}
+.tech p,.what p{font-size:13.5px;color:var(--walnut-soft);line-height:1.55}
+
+.privacy{padding:clamp(24px,4vw,40px);background:linear-gradient(160deg,var(--butter-2),#F5E7C4)}
+.faq{display:grid;gap:12px}
+.faq details{padding:0;box-shadow:none;overflow:hidden}
+.faq summary{list-style:none;cursor:pointer;padding:18px 20px;font-weight:600;color:var(--walnut-deep);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--serif);font-size:24px;line-height:1;color:var(--olive);transition:transform .25s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding:0 20px 18px;color:var(--walnut-soft);font-size:14.5px;line-height:1.6}
+
+/* About */
+.about-card{padding:clamp(24px,4vw,36px)}
+.monogram{width:96px;height:96px;border-radius:28px;display:grid;place-items:center;font-family:var(--serif);font-size:38px;font-weight:500;color:var(--butter);background:linear-gradient(135deg,var(--olive) 0%,var(--walnut) 100%);box-shadow:0 18px 30px -16px rgba(62,36,22,.7)}
+.role{display:inline-block;margin-top:6px;padding:5px 12px;border-radius:999px;background:rgba(107,107,46,.12);color:var(--olive);font-weight:600;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chips span{padding:7px 12px;border-radius:999px;border:1px solid var(--line-2);font-size:13px;background:var(--butter-3)}
+.what-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+.what{padding:20px}
+
+/* Contact */
+.contact-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start}
+.contact-form{position:relative;padding:clamp(22px,4vw,34px);display:grid;gap:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.contact-form .btn{justify-self:start}
+.sent{position:absolute;inset:0;border-radius:var(--r-card);background:var(--butter-2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:30px}
+.sent[hidden]{display:none}
+.sent h3{font-family:var(--serif);font-weight:500;font-size:26px;color:var(--walnut-deep)}
+.sent p{color:var(--walnut-soft);max-width:320px}
+.contact-side{display:grid;gap:14px}
+.side-item{display:flex;gap:14px;align-items:flex-start;padding:20px}
+.side-item h3{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--walnut-deep)}
+.side-item p{font-size:13.5px;color:var(--walnut-soft);margin-top:2px}
+
+@media (max-width:1100px){.tech-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:860px){
+  .contact-grid{grid-template-columns:1fr}
+  .timeline::before{left:43px}
+  .step{padding:20px}
+}
+@media (max-width:520px){
+  .tech-grid,.what-grid,.row2{grid-template-columns:1fr}
+  .step{grid-template-columns:1fr;gap:12px}
+  .timeline::before{display:none}
+  .contact-form .btn{justify-self:stretch}
+}

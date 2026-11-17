@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyze your data — Datagrove</title>
+<meta name="description" content="Upload a CSV and watch five AI agents analyze it live. Get interactive charts, a forecast, AI insights and a PDF report.">
+<meta name="author" content="Nimra Imran">
+<meta name="theme-color" content="#3E2416">
+<link rel="canonical" href="https://datagrove-ai.vercel.app/analyze">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Datagrove">
+<meta property="og:title" content="Analyze your data — Datagrove">
+<meta property="og:description" content="Upload a CSV and watch five AI agents analyze it live. Get interactive charts, a forecast, AI insights and a PDF report.">
+<meta property="og:url" content="https://datagrove-ai.vercel.app/analyze">
+<meta property="og:image" content="https://datagrove-ai.vercel.app/assets/img/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Datagrove — AI data analyst agent">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Analyze your data — Datagrove">
+<meta name="twitter:description" content="Upload a CSV and watch five AI agents analyze it live. Get interactive charts, a forecast, AI insights and a PDF report.">
+<meta name="twitter:image" content="https://datagrove-ai.vercel.app/assets/img/og-image.jpg">
+<link rel="preload" href="/assets/fonts/fraunces-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/style.css?v=4">
+<link rel="stylesheet" href="/assets/css/pages.css?v=4">
+<link rel="stylesheet" href="/assets/css/analyze.css?v=4">
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Main">
+    <a class="brand" href="/"><img src="/assets/img/logo.svg" alt="" width="38" height="38">Datagrove</a>
+    <div class="links"><a href="/">Home</a><a href="/analyze" class="active" aria-current="page">Analyze</a><a href="/how-it-works">How it works</a><a href="/about">About</a><a href="/contact">Contact</a></div>
+    <a class="nav-cta" href="/analyze">Try it free <svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <button class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"><span></span></button>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu"><a href="/">Home</a><a href="/analyze" class="active" aria-current="page">Analyze</a><a href="/how-it-works">How it works</a><a href="/about">About</a><a href="/contact">Contact</a></div>
+
+  <header class="page-head compact">
+    <span class="kicker">Analyze</span>
+    <h1>Your AI analytics team is <em>ready</em></h1>
+    <p>Upload a CSV and watch five agents understand, clean, analyze, chart and report on your data, live.</p>
+  </header>
+
+  <!-- Step 1: upload -->
+  <section id="stageUpload" class="upload-grid">
+    <div class="card drop" id="drop" tabindex="0" role="button" aria-label="Upload a CSV file">
+      <input type="file" id="fileInput" accept=".csv,.tsv,.txt,text/csv" hidden>
+      <div class="drop-ring"><div class="drop-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div></div>
+      <h2>Drop your CSV here</h2>
+      <p class="muted">or choose a file from your phone or computer</p>
+      <button class="btn btn-dark" type="button" id="browseBtn"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg>Browse files</button>
+      <p class="hint"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>CSV up to 4 MB · processed in memory, never stored</p>
+      <p class="err" id="uploadErr" role="alert"></p>
+    </div>
+    <div class="samples">
+      <h3>No file? Try a sample</h3>
+      <button class="card sample" type="button" data-sample="retail">
+        <span class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <span><strong>Retail sales</strong><small>4,069 orders · 12 columns · 2023–2025</small><em>Regions, categories, discounts and profit</em></span>
+        <span class="go"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button class="card sample" type="button" data-sample="coffee">
+        <span class="ico walnut"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+        <span><strong>Coffee shop</strong><small>13,158 rows · 6 columns · 2024–2025</small><em>Branches, items, cups sold and weather</em></span>
+        <span class="go"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <div class="card tips">
+        <strong>Tips for the best results</strong>
+        <ul><li>First row should contain column names</li><li>Include a date column to unlock trends and forecasts</li><li>Any business data works: sales, orders, marketing, HR</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: live agents -->
+  <section id="stageAgents" class="agents-stage" hidden>
+    <div class="card agents-panel">
+      <div class="ap-head">
+        <div>
+          <span class="live"><b></b>Live agent activity</span>
+          <h2 id="apFile">data.csv</h2>
+          <p class="muted" id="apMeta">Preparing…</p>
+        </div>
+        <div class="ap-timer"><strong id="apTimer">0.0s</strong><span>elapsed</span></div>
+      </div>
+      <div class="ap-progress"><i id="apBar"></i></div>
+      <ol class="agent-list" id="agentList">
+        <li class="ag" data-agent="understand"><span class="ag-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><div class="ag-body"><div class="ag-top"><strong>Understanding agent</strong><span class="pill">Waiting</span></div><p class="ag-msg">Learns your columns and picks the key metric</p><button class="ag-more" type="button" hidden>See details</button><div class="ag-detail" hidden></div></div></li>
+        <li class="ag" data-agent="clean"><span class="ag-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4l-7 7M9.5 10.5l4 4M4 20c1-4 3-7 5.5-9.5l4 4C11 17 8 19 4 20z"/></svg></span><div class="ag-body"><div class="ag-top"><strong>Cleaning agent</strong><span class="pill">Waiting</span></div><p class="ag-msg">Fixes missing values, duplicates and messy text</p><button class="ag-more" type="button" hidden>See details</button><div class="ag-detail" hidden></div></div></li>
+        <li class="ag" data-agent="analyze"><span class="ag-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 13l2-2 2 1.5 2.5-3"/></svg></span><div class="ag-body"><div class="ag-top"><strong>Analysis agent</strong><span class="pill">Waiting</span></div><p class="ag-msg">Finds trends, leaders and relationships</p><button class="ag-more" type="button" hidden>See details</button><div class="ag-detail" hidden></div></div></li>
+        <li class="ag" data-agent="visualize"><span class="ag-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><div class="ag-body"><div class="ag-top"><strong>Visualization agent</strong><span class="pill">Waiting</span></div><p class="ag-msg">Chooses the best interactive charts</p><button class="ag-more" type="button" hidden>See details</button><div class="ag-detail" hidden></div></div></li>
+        <li class="ag" data-agent="report"><span class="ag-ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/></svg></span><div class="ag-body"><div class="ag-top"><strong>Report agent</strong><span class="pill">Waiting</span></div><p class="ag-msg">Writes insights and recommendations</p><button class="ag-more" type="button" hidden>See details</button><div class="ag-detail" hidden></div></div></li>
+      </ol>
+      <div class="ap-error" id="apError" hidden><p></p><button class="btn btn-dark btn-sm" type="button" id="retryBtn">Try another file</button></div>
+    </div>
+  </section>
+
+  <!-- Step 3: results -->
+  <section id="stageResults" hidden>
+    <div class="res-head">
+      <div>
+        <span class="kicker">Analysis complete</span>
+        <h2 class="h2" id="resTitle">Your report</h2>
+        <p class="muted" id="resMeta"></p>
+      </div>
+      <div class="res-actions">
+        <button class="btn btn-olive" type="button" id="pdfBtn"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/></svg>Download PDF report</button>
+        <button class="btn btn-line" type="button" id="csvBtn"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg>Cleaned CSV</button>
+        <button class="btn btn-line" type="button" id="newBtn"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>New analysis</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="card filters" id="filters">
+      <div class="f-title"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 13l2-2 2 1.5 2.5-3"/></svg><strong>Filters</strong></div>
+      <div class="f-fields" id="filterFields"></div>
+      <div class="f-end"><span class="muted" id="filterCount"></span><button class="btn btn-line btn-sm" type="button" id="resetFilters">Reset</button></div>
+    </div>
+
+    <div class="chart-grid" id="chartGrid"></div>
+
+    <div class="report-grid">
+      <article class="card summary">
+        <span class="kicker light"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></svg>AI summary</span>
+        <h3 id="sumTitle"></h3>
+        <p id="sumText"></p>
+        <p class="note" id="sumNote"></p>
+      </article>
+      <div class="card insights">
+        <h3>Key insights</h3>
+        <ol id="insightList"></ol>
+      </div>
+    </div>
+
+    <div class="recs">
+      <h3 class="sec-title">Recommendations</h3>
+      <div class="rec-grid" id="recGrid"></div>
+    </div>
+
+    <div class="quality-grid">
+      <div class="card quality">
+        <h3 class="sec-title">What the cleaning agent fixed</h3>
+        <ul class="log" id="cleanLog"></ul>
+      </div>
+      <details class="card schema">
+        <summary><span><strong>Column guide</strong><small id="schemaMeta"></small></span></summary>
+        <div class="table-wrap"><table id="schemaTable"><thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>Unique</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </div>
+
+    <div class="card chat" id="chat">
+      <div class="chat-head">
+        <span class="ico"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 13.5v-2M12 13.5v-4M15.5 13.5v-3"/></svg></span>
+        <div><h3>Chat with your data</h3><p class="muted">Ask in plain words. Answers come with charts made from your real data.</p></div>
+      </div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <div class="chips-row" id="chatChips"></div>
+      <form class="chat-form" id="chatForm">
+        <input class="input" id="chatInput" placeholder="Which region has the highest sales?" maxlength="500" autocomplete="off" aria-label="Ask a question about your data">
+        <button class="btn btn-dark" type="submit" aria-label="Send"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <p class="err" id="chatErr" role="alert"></p>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="foot">
+      <a class="brand" href="/"><img src="/assets/img/logo.svg" alt="" width="32" height="32">Datagrove</a>
+      <div class="foot-links"><a href="/">Home</a><a href="/analyze">Analyze</a><a href="/how-it-works">How it works</a><a href="/about">About</a><a href="/contact">Contact</a></div>
+    </div>
+    <small>Built by Nimra Imran · © 2026 Datagrove</small>
+  </footer>
+</div>
+<script src="/assets/js/main.js?v=4" defer></script>
+<script src="/assets/vendor/plotly-cartesian.min.js" defer></script>
+<script src="/assets/vendor/jspdf.umd.min.js" defer></script>
+<script src="/assets/js/analyze.js?v=4" defer></script>
+</body>
+</html>

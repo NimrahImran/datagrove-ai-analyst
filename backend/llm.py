@@ -15,9 +15,10 @@ import httpx
 import logging
 
 log = logging.getLogger("datagrove.llm")
+logging.getLogger("httpx").setLevel(logging.WARNING)  # never log request URLs
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-DEFAULT_MODELS = ("gemini-2.5-flash", "gemini-2.0-flash")
+DEFAULT_MODELS = ("gemini-3.8-flash", "gemini-flash-latest", "gemini-2.5-flash")
 
 
 class LLMUnavailable(RuntimeError):
@@ -64,17 +65,26 @@ def generate_json(system: str, prompt: str, temperature: float = 0.4, timeout: f
         },
     }
     last_error: Exception | None = None
-    for model in _models():
+    queue = _models()
+    tried: set[str] = set()
+    while queue:
+        model = queue.pop(0)
+        if model in tried:
+            continue
+        tried.add(model)
         try:
             resp = httpx.post(
                 GEMINI_URL.format(model=model),
-                params={"key": key},
+                headers={"x-goog-api-key": key},
                 json=body,
                 timeout=timeout,
             )
             if resp.status_code != 200:
                 last_error = RuntimeError(f"{model}: HTTP {resp.status_code} {resp.text[:300]}")
                 print(f"[gemini] {last_error}", flush=True)
+                # Google names the replacement model when one is retired
+                suggested = re.findall(r"models/(gemini-[\w.\-]+)", resp.text)
+                queue = [m for m in suggested if m not in tried] + queue
                 continue
             data = resp.json()
             text = data["candidates"][0]["content"]["parts"][0]["text"]

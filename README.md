@@ -63,7 +63,7 @@ Most small businesses have useful data sitting in spreadsheets, but no time or t
 ## Tech stack
 
 - **Backend:** Python, FastAPI, pandas, NumPy, streaming NDJSON responses
-- **AI:** Google Gemini (`gemini-2.5-flash`, with automatic fallback) through the REST API
+- **AI:** Google Gemini (`gemini-3.8-flash`, with automatic fallback to newer models) through the REST API
 - **Frontend:** HTML, CSS and vanilla JavaScript, Plotly.js, jsPDF, self-hosted Fraunces and Inter fonts
 - **Hosting:** Vercel (static pages + Python serverless function)
 - **Design:** custom Olive, Buttercream and Walnut theme, fully responsive for mobile, tablet and desktop
@@ -118,7 +118,7 @@ npm i -g vercel && vercel dev  # serves the pages and the API together
 | Name | Required | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | Recommended | Google Gemini key for AI insights and chat (free key from Google AI Studio) |
-| `GEMINI_MODEL` | Optional | Override the model (default `gemini-2.5-flash`) |
+| `GEMINI_MODEL` | Optional | Override the model (default `gemini-3.8-flash`) |
 | `GMAIL_USER` | For contact form | Gmail address that sends contact emails |
 | `GMAIL_APP_PASSWORD` | For contact form | Google App Password for that address |
 | `CONTACT_TO` | Optional | Where contact messages are delivered (defaults to `GMAIL_USER`) |

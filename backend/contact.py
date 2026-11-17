@@ -41,10 +41,25 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     msg["Reply-To"] = email
     msg.set_content(f"Name: {name}\nEmail: {email}\nSubject: {subject or '-'}\n\n{message}\n")
 
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as smtp:
-            smtp.login(user, password)
-            smtp.send_message(msg)
-    except Exception as exc:
-        print(f"[contact] send failed: {type(exc).__name__}: {str(exc)[:300]}", flush=True)
-        raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
+    errors = []
+    for mode in ("ssl", "starttls"):
+        try:
+            if mode == "ssl":
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as smtp:
+                    smtp.login(user, password)
+                    smtp.send_message(msg)
+            else:
+                with smtplib.SMTP("smtp.gmail.com", 587, timeout=20) as smtp:
+                    smtp.ehlo()
+                    smtp.starttls()
+                    smtp.ehlo()
+                    smtp.login(user, password)
+                    smtp.send_message(msg)
+            return
+        except smtplib.SMTPAuthenticationError as exc:
+            print(f"[contact] {mode}: authentication failed ({exc.smtp_code})", flush=True)
+            raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
+        except Exception as exc:
+            errors.append(f"{mode}: {type(exc).__name__}: {str(exc)[:200]}")
+    print("[contact] send failed: " + " | ".join(errors), flush=True)
+    raise ContactError("We could not send your message right now. Please try again in a moment.")

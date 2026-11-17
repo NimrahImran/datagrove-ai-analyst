@@ -14,6 +14,8 @@ from __future__ import annotations
 import os
 import re
 import smtplib
+import socket
+import ssl
 
 import httpx
 from email.message import EmailMessage
@@ -54,28 +56,44 @@ def send_message(name: str, email: str, subject: str, message: str) -> None:
     msg.set_content(f"Name: {name}\nEmail: {email}\nSubject: {subject or '-'}\n\n{message}\n")
 
     errors = []
-    for mode in ("ssl", "starttls"):
-        try:
-            if mode == "ssl":
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as smtp:
-                    smtp.login(user, password)
-                    smtp.send_message(msg)
-            else:
-                with smtplib.SMTP("smtp.gmail.com", 587, timeout=20) as smtp:
+    original_getaddrinfo = socket.getaddrinfo
+
+    def ipv4_first(*args, **kwargs):  # some serverless networks have no IPv6 route
+        results = original_getaddrinfo(*args, **kwargs)
+        v4 = [r for r in results if r[0] == socket.AF_INET]
+        return v4 or results
+
+    socket.getaddrinfo = ipv4_first
+    try:
+        for mode, port in (("ssl", 465), ("starttls", 587)):
+            stage = "connect"
+            try:
+                ctx = ssl.create_default_context()
+                if mode == "ssl":
+                    smtp = smtplib.SMTP_SSL("smtp.gmail.com", port, timeout=20, context=ctx)
+                else:
+                    smtp = smtplib.SMTP("smtp.gmail.com", port, timeout=20)
+                with smtp:
+                    stage = "hello"
                     smtp.ehlo()
-                    smtp.starttls()
-                    smtp.ehlo()
+                    if mode == "starttls":
+                        stage = "starttls"
+                        smtp.starttls(context=ctx)
+                        smtp.ehlo()
+                    stage = "login"
                     smtp.login(user, password)
+                    stage = "send"
                     smtp.send_message(msg)
-            return
-        except smtplib.SMTPAuthenticationError as exc:
-            print(f"[contact] {mode}: authentication failed ({exc.smtp_code})", flush=True)
-            raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
-        except Exception as exc:
-            errors.append(f"{mode}: {type(exc).__name__}: {str(exc)[:200]}")
+                return
+            except smtplib.SMTPAuthenticationError as exc:
+                print(f"[contact] {mode}: Gmail rejected the login ({exc.smtp_code}). Check GMAIL_USER and GMAIL_APP_PASSWORD.", flush=True)
+                raise ContactError("We could not send your message right now. Please try again in a moment.") from exc
+            except Exception as exc:
+                errors.append(f"{mode}@{stage}: {type(exc).__name__}: {str(exc)[:200]}")
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
     print("[contact] send failed: " + " | ".join(errors), flush=True)
     raise ContactError("We could not send your message right now. Please try again in a moment.")
-
 
 def _send_resend(key: str, to_addr: str, name: str, email: str, subject: str, message: str) -> None:
     sender = (os.getenv("CONTACT_FROM") or "Datagrove Contact <onboarding@resend.dev>").strip()

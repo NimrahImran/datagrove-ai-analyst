@@ -84,11 +84,25 @@ class ContactRequest(BaseModel):
     website: str = ""  # honeypot: bots fill this, people never see it
 
 
-@app.get("/api/contact-config")
-def contact_config():
-    """Public form key for the browser backup (Web3Forms keys are meant to be public)."""
-    key = (os.getenv("WEB3FORMS_ACCESS_KEY") or "").strip()
-    return {"web3forms_key": key or None}
+class RouteRequest(BaseModel):
+    name: str = Field(..., max_length=120)
+    email: str = Field(..., max_length=200)
+    message: str = Field(..., max_length=5000)
+
+
+@app.post("/api/contact/route")
+def contact_route(req: RouteRequest):
+    """Where the browser should send a valid form through FormSubmit.
+
+    Uses FORMSUBMIT_ID (the random alias FormSubmit gives after activation) when set,
+    otherwise the owner's address from env vars. Never stored in code or pages.
+    """
+    if not req.name.strip() or len(req.message.strip()) < 10 or "@" not in req.email:
+        return JSONResponse(status_code=400, content={"ok": False, "error": "Please fill in the form."})
+    target = (os.getenv("FORMSUBMIT_ID") or os.getenv("CONTACT_TO") or os.getenv("GMAIL_USER") or "").strip()
+    if not target:
+        return JSONResponse(status_code=503, content={"ok": False, "error": "The contact form is not set up yet."})
+    return {"ok": True, "target": target}
 
 
 @app.post("/api/contact")

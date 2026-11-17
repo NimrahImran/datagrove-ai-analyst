@@ -5,9 +5,8 @@ Credentials live only in environment variables (never in code):
   GMAIL_APP_PASSWORD  a Google App Password for that address
   CONTACT_TO          optional, where messages go (defaults to GMAIL_USER)
 
-If Gmail is not set up or rejects the login, the browser sends the form
-through Web3Forms instead (WEB3FORMS_ACCESS_KEY, a public form key that
-does not reveal the owner's email address).
+The browser sends the form through FormSubmit first (see /api/contact/route);
+this Gmail sender is the backup.
 """
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 /* Contact form
- * 1) Sends through our API (Gmail).
- * 2) If that is not available, sends straight from the browser through
- *    Web3Forms using a public form key (the owner's email is never in the page).
+ * 1) Sends through FormSubmit (formsubmit.co) straight from the browser.
+ *    The destination comes from the server at send time and is never written in the page.
+ * 2) If FormSubmit is unavailable, falls back to our own API (Gmail).
  */
 (function () {
   var form = document.getElementById('contactForm');
@@ -10,33 +10,42 @@
   var btn = document.getElementById('cBtn');
   var sent = document.getElementById('cSent');
   var label = btn.innerHTML;
-  var configPromise = fetch('/api/contact-config').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
 
   form.addEventListener('input', function () { err.textContent = ''; });
 
-  function viaApi(data) {
-    return fetch('/api/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(function (r) { return r.json().then(function (j) { return r.ok && j.ok; }); }).catch(function () { return false; });
-  }
-
-  function viaWeb3Forms(key, data) {
-    return fetch('https://api.web3forms.com/submit', {
+  function postJson(url, body) {
+    return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        access_key: key,
-        subject: '[Datagrove] ' + (data.subject || 'New message') + ' — from ' + data.name,
-        from_name: 'Datagrove Contact',
-        name: data.name,
-        email: data.email,
-        replyto: data.email,
-        message: data.message,
-        botcheck: data.website || ''
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); });
+  }
+
+  function viaFormSubmit(data) {
+    return postJson('/api/contact/route', { name: data.name, email: data.email, message: data.message })
+      .then(function (res) {
+        if (!res.ok || !res.body.target) return false;
+        return postJson('https://formsubmit.co/ajax/' + encodeURIComponent(res.body.target), {
+          name: data.name,
+          email: data.email,
+          _replyto: data.email,
+          _subject: '[Datagrove] ' + (data.subject || 'New message') + ' — from ' + data.name,
+          _template: 'table',
+          _captcha: 'false',
+          _honey: data.website || '',
+          subject: data.subject || '-',
+          message: data.message
+        }).then(function (r) {
+          var s = r.body && String(r.body.success);
+          // First message ever asks the owner to activate the form by email: treat as received.
+          return r.ok && (s === 'true' || /activat/i.test(r.body.message || ''));
+        });
       })
-    }).then(function (r) { return r.json(); }).then(function (j) { return !!(j && j.success); }).catch(function () { return false; });
+      .catch(function () { return false; });
+  }
+
+  function viaApi(data) {
+    return postJson('/api/contact', data).then(function (r) { return r.ok && r.body.ok; }).catch(function () { return false; });
   }
 
   form.addEventListener('submit', function (e) {
@@ -49,11 +58,8 @@
 
     btn.disabled = true;
     btn.textContent = 'Sending…';
-    viaApi(data)
-      .then(function (ok) {
-        if (ok) return true;
-        return configPromise.then(function (cfg) { return cfg && cfg.web3forms_key ? viaWeb3Forms(cfg.web3forms_key, data) : false; });
-      })
+    viaFormSubmit(data)
+      .then(function (ok) { return ok || viaApi(data); })
       .then(function (ok) {
         if (ok) { form.reset(); sent.hidden = false; }
         else err.textContent = 'Could not send your message right now. Please try again in a moment.';

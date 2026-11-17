@@ -34,7 +34,7 @@ Most small businesses have useful data sitting in spreadsheets, but no time or t
 | 💬 | **Chat with your data** | Ask questions in plain words. Replies stream in live, with charts computed from the real rows, so numbers are always exact. |
 | 🧠 | **AI insights and recommendations** | An executive summary, five insights and four practical recommendations, written by Google Gemini from the real findings. |
 | 📄 | **Downloadable report** | A polished multi-page PDF (summary, KPIs, insights, recommendations, charts, cleaning log) plus the cleaned CSV. |
-| ✉️ | **Contact form** | Messages are emailed to the site owner through Gmail, with Web3Forms as an automatic backup. |
+| ✉️ | **Contact form** | Messages reach the site owner by email through FormSubmit, with Gmail as a backup. |
 
 ## The five agents
 
@@ -119,9 +119,9 @@ npm i -g vercel && vercel dev  # serves the pages and the API together
 |---|---|---|
 | `GEMINI_API_KEY` | Recommended | Google Gemini key for AI insights and chat (free key from Google AI Studio) |
 | `GEMINI_MODEL` | Optional | Override the model (default `gemini-3.8-flash`) |
-| `GMAIL_USER` | For contact form | Gmail address that sends contact emails |
+| `GMAIL_USER` | For contact form | Owner address that receives messages (also the Gmail backup sender) | Gmail address that sends contact emails |
 | `GMAIL_APP_PASSWORD` | For contact form | Google App Password for that address |
-| `WEB3FORMS_ACCESS_KEY` | Contact backup | Free form key from web3forms.com, used when Gmail is not available |
+| `FORMSUBMIT_ID` | Optional | The private random alias FormSubmit gives after activation (keeps the address hidden) |
 | `CONTACT_TO` | For contact form | Where contact messages are delivered (defaults to `GMAIL_USER`) |
 
 ## Privacy
